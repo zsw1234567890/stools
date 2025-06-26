@@ -69,8 +69,20 @@ wget -qO- https://raw.githubusercontent.com/frogchou/stools/main/uninstall.sh | 
 
 ## 配置文件
 
-`stools` 的配置文件位于 `~/.stoolsrc`。目前它只包含一项配置：
+`stools` 的配置文件位于 `~/.stoolsrc`。它主要用于存储工具源的 URL。
+
 -   `SOURCE`: 工具源的 URL。
+
+此外，某些工具（如 `smart_capture` 的 AI 分析功能）可能依赖于环境变量进行配置。
+
+### 环境变量
+
+-   **`OPENAI_API_KEY`**:
+    -   **用途**: 用于 `smart_capture` 工具调用 OpenAI API 进行 pcap 文件分析。
+    -   **设置方法**: 您需要在您的 shell 环境中设置此环境变量。例如，在 `.bashrc` 、 `.zshrc` 或者 `~/.stoolsrc` 文件中添加：
+        ```bash
+        export OPENAI_API_KEY="sk-YourOpenAIapiKeyGoesHere"
+        ```
 
 ## 如何添加新工具
 

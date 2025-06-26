@@ -10,6 +10,11 @@
       "description": "对指定IP执行端口扫描",
       "file": "port_scan.sh",
       "tags": ["nmap", "port", "security"]
+    },
+    {
+      "name": "smart_capture",
+      "description": "智能抓包并可选使用AI进行分析",
+      "file": "smart_capture.sh",
+      "tags": ["tcpdump", "pcap", "ai", "network", "analysis"]
     }
   ]
-  
