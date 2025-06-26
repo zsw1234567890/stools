@@ -39,6 +39,10 @@ wget -O - https://raw.githubusercontent.com/frogchou/stools/main/install.sh | ba
 # 假设您已克隆仓库或拥有 uninstall.sh 文件
 sudo bash uninstall.sh
 ```
+或者，你可以尝试使用以下命令：
+```
+wget -qO- https://raw.githubusercontent.com/frogchou/stools/main/uninstall.sh | bash
+```
 
 ## 使用方法
 
