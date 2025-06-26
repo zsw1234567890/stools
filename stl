@@ -82,8 +82,17 @@ search_tool() {
     fi
     local keyword=$1
     if [ -f "$META_FILE" ]; then
-        if ! jq -r ".[] | select(.name | test(\"$keyword\"; \"i\") or (.description | test(\"$keyword\"; \"i\") or (.tags[] | test(\"$keyword\"; \"i\")) ) | \"- \" + .name + \"：\" + .description" "$META_FILE"; then
-            echo "❌ 搜索工具失败。元数据文件 ($META_FILE) 可能已损坏或关键词格式错误。"
+        # 使用 --arg 将 shell 变量安全传递给 jq
+        # 将 jq 脚本主体放在单引号中，以避免 shell 扩展问题
+        # 修正了 tags 的检查，确保在 tags 不存在或不为数组时不会报错
+        local jq_script='.[] | select(
+            (.name | test($kw; "i")) or
+            (.description | test($kw; "i")) or
+            ([.tags[]? | strings] | any(test($kw; "i"))) # 确保 tags 是字符串数组且进行安全迭代
+        ) | "- " + .name + "：" + .description'
+
+        if ! jq --arg kw "$keyword" -r "$jq_script" "$META_FILE"; then
+            echo "❌ 搜索工具失败。元数据文件 ($META_FILE) 可能已损坏、关键词格式错误或 jq 执行出错。"
             return 1
         fi
     else
