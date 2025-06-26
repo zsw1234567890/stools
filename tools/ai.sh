@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================== #
-# AI 助手 (ai_assistant.sh)
+# AI 助手 (ai.sh)
 # 作者: Kilo Code (基于 frogchou 的 stools 框架)
 # 功能:
 #   - 接收用户通过命令行参数或管道输入的提示词。
@@ -9,10 +9,10 @@
 #   - 以友好方式展示结果。
 #
 # 使用方式：
-#   ai_assistant.sh <你的问题或提示词...>
-#   echo "你的问题" | ai_assistant.sh
-#   cat my_prompt.txt | ai_assistant.sh
-#   ls -l | ai_assistant.sh "请总结这个目录列表"
+#   ai.sh <你的问题或提示词...>
+#   echo "你的问题" | ai.sh
+#   cat my_prompt.txt | ai.sh
+#   ls -l | ai.sh "请总结这个目录列表"
 # =============================== #
 
 # --- 配置 ---
@@ -164,22 +164,29 @@ main() {
 
     local prompt_input=""
 
-    # 步骤2: 获取用户输入 (命令行参数或管道)
-    if [ "$#" -gt 0 ]; then
-        # 从命令行参数获取输入
-        prompt_input="$*" # 将所有参数合并为一个字符串
-    elif [ -p /dev/stdin ]; then
-        # 从管道获取输入
-        prompt_input=$(cat -)
-    else
-        # 没有参数也没有管道输入，显示用法
-        usage
+    # 步骤2: 获取用户输入 (命令行参数和/或管道)
+    local stdin_content=""
+    # 检查标准输入是否是管道/重定向 (而不是终端)
+    if [ ! -t 0 ]; then
+        stdin_content=$(cat -)
     fi
 
-    # 检查输入是否为空
-    if [ -z "$prompt_input" ]; then
+    local args_content="$*" # 获取所有命令行参数
+
+    # 组合输入
+    if [ -n "$stdin_content" ] && [ -n "$args_content" ]; then
+        # 同时有管道输入和命令行参数，将它们合并，参数在前，管道内容在后
+        prompt_input="$args_content"$'\n'"$stdin_content"
+    elif [ -n "$stdin_content" ]; then
+        # 只有管道输入
+        prompt_input="$stdin_content"
+    elif [ -n "$args_content" ]; then
+        # 只有命令行参数
+        prompt_input="$args_content"
+    else
+        # 没有参数也没有管道输入，显示用法
         echo "ℹ️ 未提供任何提示词。"
-        usage
+        usage # usage 函数会 exit
     fi
 
     # 步骤3: 调用 OpenAI API
