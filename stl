@@ -1,0 +1,315 @@
+#!/bin/bash
+# stl - stools 命令主入口脚本
+# 作者：frogchou
+# 说明：统一管理和调用 tools 下的脚本工具，支持源管理、搜索、离线下载等
+
+# ========== 配置 ==========
+CONFIG_FILE="$HOME/.stoolsrc"
+TOOLS_DIR="/opt/stools/tools"
+META_FILE="/opt/stools/meta/tools.json"
+DEFAULT_SOURCE="https://raw.githubusercontent.com/frogchou/stools/main"
+
+# ========== 初始化配置文件 ==========
+init_config() {
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "SOURCE=$DEFAULT_SOURCE" > "$CONFIG_FILE"
+    fi
+    source "$CONFIG_FILE"
+}
+
+# ========== 工具函数 ==========
+print_help() {
+    cat << EOF
+stl - Linux 工具箱统一入口
+
+用法：
+  stl help                         显示此帮助信息
+  stl source <URL>                设置新的工具源
+  stl list                        列出所有可用工具
+  stl search <关键词>             搜索工具
+  stl install-all                 下载所有工具到本地
+  stl update <工具名>             更新指定工具
+  stl update-all                  更新所有已安装的工具
+  stl uninstall <工具名>          卸载指定工具
+  stl <工具名> [参数]             执行指定工具
+EOF
+}
+
+set_source() {
+    echo "SOURCE=$1" > "$CONFIG_FILE"
+    echo "✅ 源已设置为：$1"
+}
+
+fetch_meta() {
+    mkdir -p "$(dirname "$META_FILE")"
+    echo "ℹ️ 正在从 $SOURCE 获取最新的工具列表..."
+    if curl -fsSL "$SOURCE/meta/tools.json" -o "$META_FILE.tmp"; then
+        mv "$META_FILE.tmp" "$META_FILE"
+        echo "✅ 工具列表已更新。"
+    else
+        echo "❌ 从源获取工具列表失败。"
+        if [ -f "$META_FILE" ]; then
+            echo "⚠️ 将使用本地缓存的工具列表。"
+        else
+            echo "❌ 本地也无缓存的工具列表。请检查网络或源地址 ($SOURCE)。"
+            return 1 # 返回错误码，以便调用者处理
+        fi
+    fi
+    return 0
+}
+
+list_tools() {
+    if ! fetch_meta; then
+        return 1
+    fi
+    if [ -f "$META_FILE" ]; then
+        if jq -r '.[] | "- " + .name + "：" + .description' "$META_FILE"; then
+            return 0
+        else
+            echo "❌ 解析工具列表失败。元数据文件 ($META_FILE) 可能已损坏。"
+            return 1
+        fi
+    else
+        # fetch_meta 应该已经处理了这种情况，但作为双重检查
+        echo "❌ 无法获取工具列表，元数据文件不存在。"
+        return 1
+    fi
+}
+
+search_tool() {
+    if ! fetch_meta; then
+        return 1
+    fi
+    local keyword=$1
+    if [ -f "$META_FILE" ]; then
+        if ! jq -r ".[] | select(.name | test(\"$keyword\"; \"i\") or (.description | test(\"$keyword\"; \"i\") or (.tags[] | test(\"$keyword\"; \"i\")) ) | \"- \" + .name + \"：\" + .description" "$META_FILE"; then
+            echo "❌ 搜索工具失败。元数据文件 ($META_FILE) 可能已损坏或关键词格式错误。"
+            return 1
+        fi
+    else
+        echo "❌ 无法搜索工具，元数据文件不存在。"
+        return 1
+    fi
+}
+
+download_all() {
+    if ! fetch_meta; then
+        return 1
+    fi
+    mkdir -p "$TOOLS_DIR"
+    if [ ! -f "$META_FILE" ]; then
+        echo "❌ 无法下载工具，元数据文件不存在。"
+        return 1
+    fi
+
+    echo "ℹ️ 开始下载所有工具..."
+    local all_successful=true
+    jq -r '.[] | .file' "$META_FILE" | while IFS= read -r tool_file; do
+        local tool_name="${tool_file%.sh}" # 从文件名中提取工具名，例如 lan_ping_scan.sh -> lan_ping_scan
+        echo "🔄 正在下载工具 $tool_name ($tool_file)..."
+        if curl -fsSL "$SOURCE/tools/$tool_file" -o "$TOOLS_DIR/$tool_file"; then
+            chmod +x "$TOOLS_DIR/$tool_file"
+            echo "✅ 工具 $tool_name 下载成功。"
+        else
+            echo "❌ 下载工具 $tool_name ($tool_file) 失败。"
+            all_successful=false
+        fi
+    done
+
+    if [ "$all_successful" = true ]; then
+        echo "✅ 所有工具已成功下载至 $TOOLS_DIR"
+    else
+        echo "⚠️ 部分工具下载失败。请检查网络或源地址。"
+        return 1
+    fi
+    return 0
+}
+
+update_tool() {
+    local tool_name=$1
+    local tool_filename="$tool_name.sh"
+    local tool_path="$TOOLS_DIR/$tool_filename"
+
+    echo "🔄 正在更新工具 $tool_name..."
+
+    # 检查网络连通性
+    local source_host
+    source_host=$(echo "$SOURCE" | sed -E 's_https?://([^/]+)/?.*_\1_')
+    if ! command -v ping &> /dev/null; then
+        echo "⚠️ ping 命令未找到，跳过网络连通性检查。"
+    elif ! ping -c 1 "$source_host" &> /dev/null; then
+        echo "❌ 网络连接到 $source_host 失败。无法更新工具。"
+        return 1
+    fi
+
+    mkdir -p "$TOOLS_DIR"
+    if curl -fsSL "$SOURCE/tools/$tool_filename" -o "$tool_path"; then
+        chmod +x "$tool_path"
+        echo "✅ 工具 $tool_name 更新成功。"
+        return 0
+    else
+        echo "❌ 更新工具 $tool_name ($tool_filename) 失败。"
+        # 不删除旧文件，以便用户在更新失败时仍可使用旧版本
+        return 1
+    fi
+}
+
+update_all_tools() {
+    if ! fetch_meta; then
+        return 1
+    fi
+    mkdir -p "$TOOLS_DIR"
+    if [ ! -f "$META_FILE" ]; then
+        echo "❌ 无法更新工具，元数据文件不存在。"
+        return 1
+    fi
+
+    echo "ℹ️ 开始更新所有工具..."
+    local all_successful=true
+    jq -r '.[] | .file' "$META_FILE" | while IFS= read -r tool_file; do
+        local tool_name="${tool_file%.sh}"
+        # 只更新实际存在于本地的工具，或者全部重新下载（取决于策略，此处选择全部尝试更新）
+        echo "🔄 正在更新工具 $tool_name ($tool_file)..."
+        if curl -fsSL "$SOURCE/tools/$tool_file" -o "$TOOLS_DIR/$tool_file"; then
+            chmod +x "$TOOLS_DIR/$tool_file"
+            echo "✅ 工具 $tool_name 更新成功。"
+        else
+            echo "❌ 更新工具 $tool_name ($tool_file) 失败。"
+            all_successful=false
+        fi
+    done
+
+    if [ "$all_successful" = true ]; then
+        echo "✅ 所有工具已成功更新。"
+    else
+        echo "⚠️ 部分工具更新失败。请检查网络或源地址。"
+        return 1
+    fi
+    return 0
+}
+
+uninstall_tool() {
+    local tool_name=$1
+    local tool_filename="$tool_name.sh"
+    local tool_path="$TOOLS_DIR/$tool_filename"
+
+    if [ ! -f "$tool_path" ]; then
+        echo "ℹ️ 工具 $tool_name 未安装，无需卸载。"
+        return 0
+    fi
+
+    echo "❓ 是否确定卸载工具 $tool_name ($tool_path)？ (y/N)"
+    read -r confirmation
+    if [[ "$confirmation" =~ ^[Yy]$ ]]; then
+        if rm -f "$tool_path"; then
+            echo "✅ 工具 $tool_name 已成功卸载。"
+            return 0
+        else
+            echo "❌ 卸载工具 $tool_name 失败。请检查权限。"
+            return 1
+        fi
+    else
+        echo "ℹ️ 已取消卸载操作。"
+        return 0
+    fi
+}
+
+run_tool() {
+    local tool_name=$1
+    shift
+    local tool_filename="$tool_name.sh" # 假设工具文件名总是 .sh 结尾
+    local tool_path="$TOOLS_DIR/$tool_filename"
+
+    # 检查工具是否已在本地
+    if [ -f "$tool_path" ]; then
+        echo "ℹ️ 从本地执行工具 $tool_name..."
+        "$tool_path" "$@"
+        return $? # 返回工具脚本的退出状态
+    fi
+
+    # 如果本地没有，尝试下载
+    echo "ℹ️ 工具 $tool_name 未在本地找到。"
+    echo "🔄 正在尝试从 $SOURCE 下载工具 $tool_name..."
+
+    # 简单检查网络连通性 (ping 源主机)
+    # 提取主机名用于 ping
+    local source_host
+    source_host=$(echo "$SOURCE" | sed -E 's_https?://([^/]+)/?.*_\1_')
+
+    # 检查 ping 命令是否存在
+    if ! command -v ping &> /dev/null; then
+        echo "⚠️ ping 命令未找到，跳过网络连通性检查。"
+    elif ! ping -c 1 "$source_host" &> /dev/null; then
+        echo "❌ 网络连接到 $source_host 失败。无法下载新工具。"
+        echo "❌ 工具 $tool_name 不存在且无法下载。"
+        return 1
+    fi
+    
+    mkdir -p "$TOOLS_DIR" # 确保工具目录存在
+    if curl -fsSL "$SOURCE/tools/$tool_filename" -o "$tool_path"; then
+        chmod +x "$tool_path"
+        echo "✅ 工具 $tool_name 下载成功。"
+        echo "ℹ️ 正在执行工具 $tool_name..."
+        "$tool_path" "$@"
+        return $?
+    else
+        echo "❌ 下载工具 $tool_name ($tool_filename) 失败。"
+        # 清理可能下载不完整的文件
+        if [ -f "$tool_path" ]; then
+            rm "$tool_path"
+        fi
+        echo "❌ 工具 $tool_name 不存在且无法下载。"
+        return 1
+    fi
+}
+
+# ========== 主逻辑 ==========
+init_config
+
+case "$1" in
+    help|-h|--help)
+        print_help
+        ;;
+    source)
+        if [ -z "$2" ]; then echo "❗ 缺少源地址"; exit 1; fi
+        set_source "$2"
+        ;;
+    list)
+        list_tools
+        ;;
+    search)
+        if [ -z "$2" ]; then echo "❗ 缺少关键词"; exit 1; fi
+        search_tool "$2"
+        ;;
+    install-all)
+        download_all
+        ;;
+    update)
+        if [ -z "$2" ]; then
+            echo "❗ 请指定要更新的工具名称，或使用 'update-all' 更新所有工具。"
+            exit 1
+        fi
+        if [ "$2" == "all" ]; then # 兼容 update all 的写法
+            echo "ℹ️ 'update all' 已被识别为 'update-all'。正在更新所有工具..."
+            update_all_tools
+        else
+            update_tool "$2"
+        fi
+        ;;
+    update-all)
+        update_all_tools
+        ;;
+    uninstall)
+        if [ -z "$2" ]; then
+            echo "❗ 请指定要卸载的工具名称。"
+            exit 1
+        fi
+        uninstall_tool "$2"
+        ;;
+    "")
+        print_help
+        ;;
+    *)
+        run_tool "$@"
+        ;;
+esac
