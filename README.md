@@ -1,120 +1,138 @@
-# stools - Linux 工具箱
+[简体中文](README_zh-CN.md) | English
 
-`stools` 是一个轻量级的 Linux 命令行工具箱框架，旨在帮助用户方便地管理和使用各种自定义脚本工具。
+# stools - Linux Toolbox
 
-## 特性
+`stools` is a lightweight Linux command-line toolbox framework designed to help users conveniently manage and use various custom script tools.
 
--   **统一入口**：通过 `stl` 命令集中管理和调用所有工具。
--   **源管理**：支持从不同的源（例如 GitHub 或私有服务器）获取工具列表和脚本。
--   **工具管理**：
-    -   列出可用工具。
-    -   搜索工具（按名称、描述、标签）。
-    -   下载所有工具到本地，方便离线使用。
-    -   更新单个或所有已安装的工具。
-    -   卸载单个工具。
--   **易于扩展**：只需将新的 shell 脚本添加到工具源的 `tools` 目录，并在 `meta/tools.json` 中注册即可。
--   **环境友好**：安装脚本会自动检查并尝试安装所需依赖 (`curl`, `jq`)。
+The toolbox collects some commonly used tools, for example:
+-   **`lan_ping_scan`**: Scans for active hosts in the local area network.
+-   **`port_scan`**: Performs a port scan on a specified IP address.
+-   **`smart_capture`**: Intelligently captures network packets and optionally analyzes them using AI.
+-   **`remote_exec`**: Executes commands or transfers files批量 remotely on multiple hosts (relies on `expect` and the `hostsinfo` file).
+-   **`setup_ssh_trust`**: Sets up SSH passwordless login批量 from the local machine to remote hosts (relies on `expect` and the `hostsinfo` file).
+-   **`ssh_quick_trust`**: Quickly sets up SSH passwordless login for a single remote host (specifying host and credentials via parameters).
+-   **`ai`**: A general-purpose AI assistant that receives prompts via command line or pipe and calls the OpenAI API to get answers (relies on the `OPENAI_API_KEY` environment variable).
 
-## 安装
+More tools will be added and updated in the future. Contributions are welcome!
 
-您可以使用以下命令一键安装 `stools`：
+## Features
+
+-   **Unified Entry Point**: Centrally manage and invoke all tools via the `stl` command.
+-   **Source Management**: Supports fetching tool lists and scripts from different sources (e.g., GitHub or private servers).
+-   **Tool Management**:
+    -   List available tools.
+    -   Search for tools (by name, description, tags).
+    -   Download all tools locally for offline use.
+    -   Update a single or all installed tools.
+    -   Uninstall a single tool.
+-   **Easy to Extend**: Simply add new shell scripts to the `tools/` directory of your tool source and register them in `meta/tools.json`.
+-   **Environment-Friendly**: The installation script automatically checks and attempts to install required dependencies (`curl`, `jq`).
+
+## Installation
+
+You can install `stools` with a single command:
 
 ```bash
 wget -O - https://raw.githubusercontent.com/frogchou/stools/main/install.sh | bash
 ```
-或者，如果您的仓库地址不同，请替换上面的 URL。
+Alternatively, if your repository address is different, replace the URL above.
 
-安装脚本将会：
-1.  检查并安装依赖项 (`curl`, `jq`)。
-2.  检查并处理潜在的命令或目录冲突。
-3.  将 `stools` 安装到 `/opt/stools`。
-4.  在 `/usr/local/bin` 创建 `stl` 命令的软链接。
-5.  在用户主目录下创建配置文件 `~/.stoolsrc`。
+The installation script will:
+1.  Check and install dependencies (`curl`, `jq`).
+2.  Check and handle potential command or directory conflicts.
+3.  Install `stools` to `/opt/stools`.
+4.  Create a symbolic link for the `stl` command in `/usr/local/bin`.
+5.  Create a configuration file `~/.stoolsrc` in the user's home directory.
 
-## 卸载
+## Uninstallation
 
-要卸载 `stools`，请执行项目中的 `uninstall.sh` 脚本（需要 root 或 sudo 权限）：
+To uninstall `stools`, execute the `uninstall.sh` script from the project (requires root or sudo privileges):
 
 ```bash
-# 假设您已克隆仓库或拥有 uninstall.sh 文件
+# Assuming you have cloned the repository or have the uninstall.sh file
 sudo bash uninstall.sh
 ```
-或者，你可以尝试使用以下命令：
+Alternatively, you can try using the following command:
 ```
 wget -qO- https://raw.githubusercontent.com/frogchou/stools/main/uninstall.sh | bash
 ```
 
-## 使用方法
+## Usage
 
-安装完成后，您可以使用 `stl` 命令。
+After installation, you can use the `stl` command.
 
-### 基本命令
+### Basic Commands
 
--   `stl help` 或 `stl -h`, `stl --help`: 显示帮助信息。
--   `stl list`: 列出所有可用的工具及其描述。
--   `stl search <关键词>`: 根据关键词（不区分大小写）搜索工具的名称、描述或标签。
--   `stl <工具名> [参数...]`: 执行指定的工具。如果工具未在本地，`stl` 会尝试从配置的源下载它。
+-   `stl help` or `stl -h`, `stl --help`: Display help information.
+-   `stl list`: List all available tools and their descriptions.
+-   `stl search <keyword>`: Search for tools by name, description, or tags (case-insensitive).
+-   `stl <tool_name> [parameters...]`: Execute the specified tool. If the tool is not available locally, `stl` will attempt to download it from the configured source.
 
-### 工具管理命令
+### Tool Management Commands
 
--   `stl install-all`: 从源下载所有可用工具到本地 (`/opt/stools/tools`)，方便离线使用。
--   `stl update <工具名>`: 从源重新下载并更新指定的工具。
--   `stl update-all`: 从源重新下载并更新所有在元数据中列出的工具。
--   `stl uninstall <工具名>`: 从本地卸载指定的工具（会请求确认）。
+-   `stl install-all`: Download all available tools from the source to the local machine (`/opt/stools/tools`) for offline use.
+-   `stl update <tool_name>`: Re-download and update the specified tool from the source.
+-   `stl update-all`: Re-download and update all tools listed in the metadata from the source.
+-   `stl uninstall <tool_name>`: Uninstall the specified tool from the local machine (will ask for confirmation).
 
-### 源管理命令
+### Source Management Commands
 
--   `stl source <URL>`: 设置新的工具源地址。工具列表 (`meta/tools.json`) 和工具脚本将从这个新的 URL 获取。
-    例如：`stl source https://your-mirror.com/stools`
+-   `stl source <URL>`: Set a new tool source URL. The tool list (`meta/tools.json`) and tool scripts will be fetched from this new URL.
+    Example: `stl source https://your-mirror.com/stools`
 
-## 配置文件
+#### Recommended Mirror for Mainland China
 
-`stools` 的配置文件位于 `~/.stoolsrc`。它主要用于存储工具源的 URL。
+-   **frogchou's China Mirror**: `http://d.frogchou.com/linux/stools/`
 
--   `SOURCE`: 工具源的 URL。
+## Configuration File
 
-此外，某些工具（如 `smart_capture` 的 AI 分析功能）可能依赖于环境变量进行配置。
+The configuration file for `stools` is located at `~/.stoolsrc`. It is primarily used to store the tool source URL.
 
-### 环境变量
+-   `SOURCE`: The URL of the tool source.
+
+Additionally, some tools (like the AI analysis feature in `smart_capture`) may rely on environment variables for configuration.
+
+### Environment Variables
 
 -   **`OPENAI_API_KEY`**:
-    -   **用途**: 用于 `smart_capture` 工具调用 OpenAI API 进行 pcap 文件分析。
-    -   **设置方法**: 您需要在您的 shell 环境中设置此环境变量。例如，在 `.bashrc` 、 `.zshrc` 或者 `~/.stoolsrc` 文件中添加：
+    -   **Purpose**: Used by the `smart_capture` and `ai` tools to call the OpenAI API.
+    -   **Setup**: You need to set this environment variable in your shell environment. For example, add the following to your `.bashrc`, `.zshrc`, or even `~/.stoolsrc` file:
         ```bash
         export OPENAI_API_KEY="sk-YourOpenAIapiKeyGoesHere"
         ```
+    -   **Note**: Please replace `"sk-YourOpenAIapiKeyGoesHere"` with your actual OpenAI API key. This key is not stored in the `~/.stoolsrc` file but is read directly from the environment variables when the script is executed.
 
-## 如何添加新工具
+## How to Add New Tools
 
-1.  **创建工具脚本**：编写您的 shell 脚本 (例如 `my_new_tool.sh`) 并将其放置在您的工具源仓库的 `tools/` 目录下。
-2.  **更新元数据**：编辑工具源仓库中的 `meta/tools.json` 文件，添加一个描述您的新工具的 JSON 对象。格式如下：
+1.  **Create Tool Script**: Write your shell script (e.g., `my_new_tool.sh`) and place it in the `tools/` directory of your tool source repository.
+2.  **Update Metadata**: Edit the `meta/tools.json` file in your tool source repository and add a JSON object describing your new tool. The format is as follows:
     ```json
     [
       {
         "name": "lan_ping_scan",
-        "description": "扫描局域网中存活的主机",
+        "description": "Scans for active hosts in the local area network.",
         "file": "lan_ping_scan.sh",
         "tags": ["ping", "network", "scan"]
       },
       {
         "name": "my_new_tool",
-        "description": "这是我的新工具的描述",
+        "description": "This is the description of my new tool.",
         "file": "my_new_tool.sh",
         "tags": ["new", "custom", "example"]
       }
     ]
     ```
-    -   `name`: 工具的调用名称 (不含 `.sh` 后缀)。
-    -   `description`: 工具的简短描述。
-    -   `file`: 工具脚本的文件名 (在 `tools/` 目录下)。
-    -   `tags`: 一个包含相关关键词的数组，用于搜索。
+    -   `name`: The invocation name of the tool (without the `.sh` suffix).
+    -   `description`: A short description of the tool.
+    -   `file`: The filename of the tool script (in the `tools/` directory).
+    -   `tags`: An array of relevant keywords for searching.
 
-3.  用户在下次执行 `stl list`, `stl search`, `stl install-all`, `stl update-all` 或尝试运行新工具时，`stools` 会从更新后的源获取最新的元数据。
+3.  When users next execute `stl list`, `stl search`, `stl install-all`, `stl update-all`, or try to run the new tool, `stools` will fetch the latest metadata from the updated source.
 
-## 贡献
+## Contributing
 
-欢迎提交问题、功能请求或拉取请求！
+Issues, feature requests, and pull requests are welcome!
 
-## 许可证
+## License
 
-[MIT](LICENSE) （如果您计划使用 MIT 许可证，请创建一个 LICENSE 文件）
+This project is licensed under the terms of the [MIT License](LICENSE).

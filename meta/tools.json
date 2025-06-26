@@ -16,5 +16,29 @@
       "description": "智能抓包并可选使用AI进行分析",
       "file": "smart_capture.sh",
       "tags": ["tcpdump", "pcap", "ai", "network", "analysis"]
+    },
+    {
+      "name": "remote_exec",
+      "description": "批量远程执行命令或传输文件 (依赖expect和hostsinfo文件)",
+      "file": "remote_exec.sh",
+      "tags": ["ssh", "scp", "expect", "batch", "remote"]
+    },
+    {
+      "name": "setup_ssh_trust",
+      "description": "批量设置SSH免密登录 (本机到远程, 依赖expect和hostsinfo文件)",
+      "file": "setup_ssh_trust.sh",
+      "tags": ["ssh", "ssh-copy-id", "expect", "batch", "automation", "security"]
+    },
+    {
+      "name": "ssh_quick_trust",
+      "description": "为单个远程主机快速设置SSH免密登录 (参数指定主机和凭证)",
+      "file": "ssh_quick_trust.sh",
+      "tags": ["ssh", "ssh-copy-id", "expect", "automation", "security"]
+    },
+    {
+      "name": "ai",
+      "description": "通用AI助手，通过命令行或管道接收提示词并调用OpenAI API获取回答。",
+      "file": "ai.sh",
+      "tags": ["ai", "openai", "gpt", "assistant", "text", "prompt"]
     }
   ]
