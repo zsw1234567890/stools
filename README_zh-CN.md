@@ -37,6 +37,13 @@ wget -O - https://raw.githubusercontent.com/frogchou/stools/main/install.sh | ba
 ```
 或者，如果您的仓库地址不同，请替换上面的 URL。
 
+### 一个可用的国内源
+
+您也可以使用以下命令一键安装 `stools`，并指定国内源：
+```bash
+wget -O - http://d.frogchou.com/linux/stl.sh | bash
+```
+
 安装脚本将会：
 1.  检查并安装依赖项 (`curl`, `jq`)。
 2.  检查并处理潜在的命令或目录冲突。

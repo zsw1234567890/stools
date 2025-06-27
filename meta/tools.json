@@ -40,5 +40,11 @@
       "description": "通用AI助手，通过命令行或管道接收提示词并调用OpenAI API获取回答。",
       "file": "ai.sh",
       "tags": ["ai", "openai", "gpt", "assistant", "text", "prompt"]
+    },
+    {
+      "name": "aido",
+      "description": "AI命令生成助手，根据自然语言需求生成Linux命令并可选择执行。",
+      "file": "aido.sh",
+      "tags": ["ai", "openai", "command", "generation", "do"]
     }
   ]
