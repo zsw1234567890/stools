@@ -139,6 +139,8 @@ wget -qO- https://raw.githubusercontent.com/frogchou/stools/main/uninstall.sh | 
 
 欢迎提交问题、功能请求或拉取请求！
 
+请参考[贡献说明文档](CONTRIBUTING.md)以获取详细的贡献指南。
+
 ## 许可证
 
 本项目根据 [MIT 许可证](LICENSE) 的条款进行许可。
