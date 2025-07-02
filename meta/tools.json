@@ -47,4 +47,11 @@
       "file": "aido.sh",
       "tags": ["ai", "openai", "command", "generation", "do"]
     }
+  ,
+    {
+      "name": "sys_info",
+      "description": "输出系统发行版、内核、资源使用率等详细信息，自动适配主流Linux并自动安装依赖，兼容性强。",
+      "file": "sys_info.sh",
+      "tags": ["system", "info", "resource", "compatibility", "auto-install"]
+    }
   ]
